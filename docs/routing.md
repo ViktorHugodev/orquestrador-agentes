@@ -18,43 +18,56 @@ barato aqui".
 
 ## A tabela
 
-| Nível        | Critério                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| barato        | mecânico: busca, leitura, resumo, listagem, lookup de documentação, coleta de contexto     |
-| intermediário | **default de implementação**: task com escopo definido, refactor, bug com causa clara, multi-arquivo, teste pedido |
-| volume/longa | tarefa longa ou repetitiva em que poupar cota pesa mais que a integração — CLI externo, execução direta no repositório |
-| revisor      | review e segunda opinião: crítica de plano, review de diff, diagnóstico quando o nível principal trava. **Não é rota de implementação** |
-| topo         | arquitetura, plano multi-etapa, debug sem hipótese, trade-offs, revisão de diff alheio      |
+O conjunto abaixo é o que roda aqui hoje: três níveis da família Claude, um CLI
+externo de outro fornecedor como revisor e um segundo CLI externo para volume.
+Os nomes são concretos de propósito — a tabela só funciona se cada linha apontar
+para um motor real com preço real. Adapte os nomes ao seu conjunto; o critério
+de cada linha é o que importa.
 
-Hierarquia de capacidade: barato < intermediário < topo. Cada degrau só entra
+| Rota              | Motor                          | Critério                                                                                                          |
+| ----------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| exploração        | Haiku                          | mecânico: busca, leitura, resumo, listagem, lookup de documentação, coleta de contexto                             |
+| implementação     | Sonnet                         | **default de implementação**: task com escopo definido, refactor, bug com causa clara, multi-arquivo, teste pedido |
+| volume / longa    | CLI externo (Gemini/Antigravity) | tarefa longa ou repetitiva em que poupar cota do provedor principal pesa mais que a integração                     |
+| revisão           | CLI externo (GPT/Codex)        | review e segunda opinião: crítica de plano, review de diff, diagnóstico quando a rota principal trava. **Não é rota de implementação** |
+| arquitetura       | Opus                           | arquitetura, plano multi-etapa, debug sem hipótese, trade-offs, revisão de diff alheio                             |
+| topo              | modelo de maior capacidade     | só o que a rota de arquitetura comprovadamente não fecha; exige tentativa prévia ou justificativa explícita        |
+
+Hierarquia de capacidade: Haiku < Sonnet < Opus < topo. Cada degrau só entra
 quando o anterior comprovadamente não resolve — subir de degrau por preguiça de
 escrever um contrato curto é erro de rota tanto quanto implementar direto no
 nível mais caro.
 
+Por que dois CLIs externos e não só mais um nível da mesma família: **revisão
+exige viés diferente**, e um modelo da mesma família tende a concordar com o
+raciocínio que ela mesma produziria. E **volume tem economia própria** — crédito
+pré-pago que expira sem uso vale menos que cota cara guardada, então a tarefa
+longa vai para onde o crédito já está comprado.
+
 ## Por que cada degrau existe
 
-**Barato** existe porque exploração é volume, não julgamento. Buscar um
+**Exploração (Haiku)** existe porque exploração é volume, não julgamento. Buscar um
 símbolo, ler um arquivo e resumir, listar um diretório — nada disso exige
 raciocínio sobre trade-off. Rodar isso no modelo caro não produz resultado
 melhor, só um resultado igual mais caro.
 
-**Intermediário** é o default de implementação porque a maioria das tarefas de
+**Implementação (Sonnet)** é o default de implementação porque a maioria das tarefas de
 código tem escopo fechado: objetivo claro, arquivos identificáveis, critério de
 aceite verificável. Esse é o volume real de trabalho de um sistema agêntico, e
 é exatamente onde a diferença de custo entre modelos mais importa.
 
-**Volume/longa** existe para o caso em que a tarefa é grande ou repetitiva o
+**Volume/longa (CLI externo)** existe para o caso em que a tarefa é grande ou repetitiva o
 bastante para que a integração com o orquestrador principal (montar contrato,
 ler diff, validar) custe mais do que rodar direto num CLI externo com mãos
 próprias no repositório.
 
-**Revisor** é deliberadamente separado de implementação. O valor de uma
+**Revisão (CLI externo de outro fornecedor)** é deliberadamente separada de implementação. O valor de uma
 segunda opinião vem de um viés diferente do que gerou o primeiro resultado —
 um revisor que herda o raciocínio de quem implementou não está revisando, está
 confirmando. Por isso o revisor lê o código sozinho e critica, sem receber o
 raciocínio de quem pediu a revisão.
 
-**Topo** é reservado para o que os outros níveis comprovadamente não fecham:
+**Arquitetura (Opus) e topo** são reservados para o que os outros níveis comprovadamente não fecham:
 arquitetura, decisão com trade-off, debug sem hipótese nenhuma. Subir para
 esse nível por hábito, em vez de por necessidade demonstrada, é o mesmo erro
 de rota que implementar ali direto — só que mais caro de perceber, porque o

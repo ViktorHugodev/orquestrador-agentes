@@ -13,8 +13,8 @@ decisões de arquitetura abaixo, não nas features.
 
 ```
 agents/
-  explorador.md    subagente barato para busca, leitura e coleta de contexto
-  executor.md      subagente de implementação com escopo fechado
+  explorador.md    subagente Haiku para busca, leitura e coleta de contexto
+  executor.md      subagente Sonnet de implementação com escopo fechado
 commands/
   rota.md          comando que classifica uma task e já dispara o executor certo
 hooks/
@@ -34,11 +34,12 @@ a que desperdiça a maior parte da cota: uma busca de arquivo ou um resumo de
 documentação não precisam do mesmo motor que uma decisão de arquitetura.
 Tratar as duas coisas igual não é rigor, é ausência de critério.
 
-A correção é uma tabela explícita de degraus — barato para trabalho mecânico,
-intermediário como default de implementação, um nível de revisão separado da
-implementação, e o nível mais caro reservado para arquitetura, trade-off e
-debug sem hipótese nenhuma. Cada degrau só é usado quando o anterior
-comprovadamente não resolve. Subir de nível por hábito, em vez de por
+A correção é uma tabela explícita de rotas, com um motor nomeado em cada linha:
+Haiku para trabalho mecânico, Sonnet como default de implementação, um CLI
+externo de outro fornecedor como revisor — porque revisão exige viés diferente
+de quem produziu o resultado —, um segundo CLI externo para tarefa de volume, e
+Opus reservado para arquitetura, trade-off e debug sem hipótese nenhuma. Cada
+degrau só é usado quando o anterior comprovadamente não resolve. Subir de nível por hábito, em vez de por
 necessidade demonstrada, é o mesmo erro de rota que implementar direto no
 nível mais caro — só mais difícil de perceber, porque o resultado tende a
 sair bom mesmo quando o nível estava errado. Detalhe completo e a tabela em
@@ -85,10 +86,9 @@ O executor definido em [`agents/executor.md`](agents/executor.md) recebe o
 contrato de quatro campos e tem acesso direto a leitura, edição, execução de
 comandos e busca no próprio repositório. Ele investiga por conta própria o
 que precisar — padrões ao redor, onde a mudança se encaixa — deslocando o
-custo de exploração para o nível de modelo certo (intermediário, não o mais
-caro) e liberando o orquestrador para decisões que exigem julgamento de mais
+custo de exploração para o nível de modelo certo (Sonnet, não Opus) e liberando o orquestrador para decisões que exigem julgamento de mais
 alto nível. O subagente [`agents/explorador.md`](agents/explorador.md) cobre
-o caso simétrico: puro trabalho de busca e leitura, no nível mais barato,
+o caso simétrico: puro trabalho de busca e leitura, em Haiku,
 retornando sempre um resumo — nunca o conteúdo bruto inteiro, o que anularia
 a economia de rodar no modelo barato.
 
