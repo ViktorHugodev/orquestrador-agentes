@@ -29,7 +29,8 @@ para quem pede volta a ser dois cliques.
 ### 0. A rota foi nomeada? Então a rota está decidida
 
 Se a primeira palavra do argumento for o nome de uma rota específica (ex:
-`haiku`, `sonnet`, `agy`, `codex`, `opus`), isso é **ordem, não sugestão**. Não
+`haiku`, `sonnet`, `opus`, ou o nome de um dos CLIs externos), isso é
+**ordem, não sugestão**. Não
 reclassificar, não "melhorar" a escolha, não cair num degrau mais barato porque
 a task pareceu simples. Quem pediu conhece o custo e escolheu pagá-lo —
 discordar aqui é trocar a decisão dele pela sua sem avisar.
@@ -58,6 +59,9 @@ para impedir: da tela de quem pediu, o pedido simplesmente sumiu.
 | revisor externo | review, crítica de plano, segundo diagnóstico                           | CLI externo em modo read-only              |
 | volume/longa    | tarefa longa onde poupar cota pesa mais que integração                  | agente de CLI dedicado                     |
 | topo            | arquitetura, plano, trade-off, debug sem hipótese                       | **fica com o orquestrador, não delega**    |
+
+Os nomes das rotas são os mesmos do hook de triagem; a tabela completa, com o
+motor concreto de cada linha, está em [`docs/routing.md`](../docs/routing.md).
 
 Na dúvida entre dois degraus, escolher o mais barato: contrato mal dimensionado
 para baixo volta em minutos, para cima gasta cota que não volta.

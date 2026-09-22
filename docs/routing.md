@@ -22,18 +22,19 @@ O conjunto abaixo é o que roda aqui hoje: três níveis da família Claude, um 
 externo de outro fornecedor como revisor e um segundo CLI externo para volume.
 Os nomes são concretos de propósito — a tabela só funciona se cada linha apontar
 para um motor real com preço real. Adapte os nomes ao seu conjunto; o critério
-de cada linha é o que importa.
+de cada linha é o que importa. Entre parênteses, o nome curto que o hook de
+triagem e o comando `rota` usam para a mesma linha.
 
-| Rota              | Motor                          | Critério                                                                                                          |
-| ----------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| exploração        | Haiku                          | mecânico: busca, leitura, resumo, listagem, lookup de documentação, coleta de contexto                             |
-| implementação     | Sonnet                         | **default de implementação**: task com escopo definido, refactor, bug com causa clara, multi-arquivo, teste pedido |
-| volume / longa    | CLI externo (Gemini/Antigravity) | tarefa longa ou repetitiva em que poupar cota do provedor principal pesa mais que a integração                     |
-| revisão           | CLI externo (GPT/Codex)        | review e segunda opinião: crítica de plano, review de diff, diagnóstico quando a rota principal trava. **Não é rota de implementação** |
-| arquitetura       | Opus                           | arquitetura, plano multi-etapa, debug sem hipótese, trade-offs, revisão de diff alheio                             |
-| topo              | modelo de maior capacidade     | só o que a rota de arquitetura comprovadamente não fecha; exige tentativa prévia ou justificativa explícita        |
+| Rota                        | Motor                          | Critério                                                                                                          |
+| --------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| exploração (barato)         | Haiku                          | mecânico: busca, leitura, resumo, listagem, lookup de documentação, coleta de contexto                             |
+| implementação (intermediário) | Sonnet                       | **default de implementação**: task com escopo definido, refactor, bug com causa clara, multi-arquivo, teste pedido |
+| volume / longa (volume)     | CLI externo (Gemini/Antigravity) | tarefa longa ou repetitiva em que poupar cota do provedor principal pesa mais que a integração                     |
+| revisão (revisor)           | CLI externo (GPT/Codex)        | review e segunda opinião: crítica de plano, review de diff, diagnóstico quando a rota principal trava. **Não é rota de implementação** |
+| arquitetura (topo)          | Opus                           | arquitetura, plano multi-etapa, debug sem hipótese, trade-offs, revisão de diff alheio                             |
+| acima do topo               | modelo de maior capacidade     | só o que a rota de arquitetura comprovadamente não fecha; exige tentativa prévia ou justificativa explícita        |
 
-Hierarquia de capacidade: Haiku < Sonnet < Opus < topo. Cada degrau só entra
+Hierarquia de capacidade: Haiku < Sonnet < Opus < acima do topo. Cada degrau só entra
 quando o anterior comprovadamente não resolve — subir de degrau por preguiça de
 escrever um contrato curto é erro de rota tanto quanto implementar direto no
 nível mais caro.
@@ -67,7 +68,7 @@ um revisor que herda o raciocínio de quem implementou não está revisando, est
 confirmando. Por isso o revisor lê o código sozinho e critica, sem receber o
 raciocínio de quem pediu a revisão.
 
-**Arquitetura (Opus) e topo** são reservados para o que os outros níveis comprovadamente não fecham:
+**Arquitetura (Opus) e o nível acima** são reservados para o que os outros níveis comprovadamente não fecham:
 arquitetura, decisão com trade-off, debug sem hipótese nenhuma. Subir para
 esse nível por hábito, em vez de por necessidade demonstrada, é o mesmo erro
 de rota que implementar ali direto — só que mais caro de perceber, porque o
