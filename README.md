@@ -54,6 +54,7 @@ commands/
   rota.md               comando que classifica uma task e já dispara o executor certo
 skills/
   superplan.md          plano revisado por um modelo de outro fornecedor, via CLI
+  verifica.md           veredito por afirmação, com fonte, feito por quem não afirmou
 hooks/
   route-triage.cjs      lembra a triagem de rota em todo prompt
   erros-resolvidos.cjs  injeta bugs já resolvidos no início da sessão
@@ -63,6 +64,7 @@ tools/
   route-report.js       mede gasto por modelo a partir dos transcripts locais
 docs/
   routing.md            a tabela de roteamento e o porquê de cada degrau
+  memoria-de-erros.md   formato do arquivo de erros que o hook injeta na sessão
   handoff.md            o contrato de delegação e o critério de aceite executável
 ```
 
@@ -142,18 +144,25 @@ O custo: a worktree nasce sem dependências instaladas, sem cache de build e sem
 arquivo não versionado (`.env`), e o merge de volta é manual. Por isso é
 condicional — árvore limpa não paga esse preço.
 
-## 6. Revisão adversarial por um modelo de outro fornecedor
+## 6. Quem produz não verifica
 
-Decisão de arquitetura entra em [`skills/superplan.md`](skills/superplan.md):
-quem planeja escreve o plano, marca onde quer contraditório e manda para um
-modelo de **outro fornecedor**, rodando por CLI própria com acesso somente de
-leitura. Ele critica ponto a ponto — concordo, discordo com cenário concreto de
-falha, faltou —, o autor responde cada objeção e o plano final carrega a lista
-do que foi aceito, do que foi rejeitado e por quê.
+O princípio aparece três vezes neste repositório: o critério de aceite é um
+comando e não o relatório do subagente sobre si mesmo; o plano é criticado por
+quem não o escreveu; e o fato é checado por quem não o afirmou. As duas últimas
+usam o mesmo instrumento — um modelo de outro fornecedor, por CLI própria, em
+modo somente-leitura.
 
-O motivo de ser outro fornecedor: pedir crítica ao mesmo modelo que escreveu o
-plano produz concordância educada, porque ele já aceitou as próprias premissas.
-Um revisor que não herdou o raciocínio ataca a premissa, não a redação.
+O motivo de ser outro fornecedor, e não outra sessão do mesmo modelo: pedir
+crítica a quem escreveu o plano produz concordância educada, porque ele já
+aceitou as próprias premissas. Um revisor que não herdou o raciocínio ataca a
+premissa, não a redação.
+
+[`skills/superplan.md`](skills/superplan.md) cobre a decisão de arquitetura.
+Quem planeja marca no texto onde quer contraditório; o revisor responde ponto a
+ponto — concordo, discordo com cenário concreto de falha, faltou; e o plano
+final carrega a lista do que foi aceito, do que foi rejeitado e por quê. Essa
+lista é o que impede a revisão de virar teatro: sem ela não há como saber depois
+se a crítica mudou alguma coisa.
 
 O custo: é a parte mais cara e mais frágil do conjunto. Cada fornecedor tem CLI,
 sandbox e formato de saída próprios, e o plano precisa ser recortado — texto,
@@ -162,6 +171,39 @@ no fim da skill custaram uma rodada cada em execução real, de decodificação 
 UTF-8 pelo shell a instrução persistente herdada da CLI do revisor. Também é
 lento: minutos, não segundos. Por isso não roda em tarefa de rotina, só onde
 errar sai mais caro do que esperar.
+
+Uma segunda aplicação do mesmo princípio: [`skills/verifica.md`](skills/verifica.md)
+manda as afirmações checáveis de um texto — número, data, versão, citação,
+alegação técnica — para o revisor externo devolver um veredito e uma fonte por
+afirmação, com instrução explícita de procurar evidência que **refute** antes de
+aceitar. A taxonomia separa "não verificável" de "falso", que é a distinção que
+a maioria das verificações automáticas erra: ausência de fonte tratada como
+refutação produz uma correção errada, pior que a dúvida original.
+
+Nos dois casos o veredito do revisor não obriga automaticamente. Havendo fonte
+melhor, a afirmação fica — com a fonte à vista. Aceitar tudo que o verificador
+diz não elimina a autoridade, só a transfere.
+
+## 7. Memória de projeto indexada pelo sintoma
+
+Um agente que não lembra rediagnostica. O mesmo bug foi corrigido três vezes em
+dias diferentes, cada vez do zero. O hook `erros-resolvidos.cjs` injeta no
+início da sessão o `ERROS-RESOLVIDOS.md` do projeto, e o formato está em
+[`docs/memoria-de-erros.md`](docs/memoria-de-erros.md): sintoma como título,
+causa confirmada, correção com arquivo e linha, e o sinal que identifica o caso
+de novo.
+
+A escolha que importa é o índice. Memória conversacional guarda **o que foi
+dito**, e é inútil quando o que se tem em mãos é uma mensagem de erro: a
+pergunta ali é "isto já aconteceu?", e ela só é respondível se a chave for o
+sintoma. Por isso o título da entrada é a mensagem de erro como ela aparece na
+tela, não o nome da solução.
+
+O custo: é curadoria manual e o arquivo inteiro entra em toda sessão. Registrar
+bug trivial infla o arquivo até ele deixar de ser lido — e memória que ninguém
+lê é só um imposto de contexto. A regra de admissão (custou mais de uma
+tentativa) existe para isso, e é aplicada por julgamento, sem teste que a
+garanta.
 
 ## Os hooks
 
