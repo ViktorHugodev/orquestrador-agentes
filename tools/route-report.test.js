@@ -9,6 +9,7 @@ const {
   normalizeModelId,
   aggregateByModel,
   counterfactual,
+  splitCost,
   buildCounterfactualReport,
   buildReport,
   NO_MODEL_LABEL,
@@ -246,4 +247,41 @@ test('buildReport: fluxo completo nao lanca e reporta rodape coerente', () => {
   assert.equal(report.footer.discardedLines, 1);
   assert.equal(report.modelRows.length, 1);
   assert.equal(report.modelRows[0].model, 'claude-sonnet-5');
+});
+
+test('splitCost(totals, modelId): decompoe contexto (input+cache) e geracao (output), numeros conferidos a mao', () => {
+  const totals = { input: 1_000_000, cacheWrite: 1_000_000, cacheRead: 1_000_000, output: 1_000_000 };
+  // claude-sonnet-5: contexto = 2 + 2.5 + 0.2 = 4.7 | geracao = 10
+  const { context, generation } = splitCost(totals, 'claude-sonnet-5');
+  assert.equal(Math.round(context * 100) / 100, 4.7);
+  assert.equal(Math.round(generation * 100) / 100, 10);
+  assert.equal(Math.round((context + generation) * 100) / 100, 14.7);
+  assert.equal(Math.round((context + generation) * 100) / 100, Math.round(counterfactual(totals, 'claude-sonnet-5') * 100) / 100);
+});
+
+test('splitCost: modelo sem preco devolve null nos dois campos', () => {
+  const totals = { input: 1000, cacheWrite: 0, cacheRead: 0, output: 1000 };
+  const { context, generation } = splitCost(totals, 'gpt-5.6-terra');
+  assert.equal(context, null);
+  assert.equal(generation, null);
+});
+
+test('buildReport: costSplit.context + costSplit.generation bate com totalCost; modelo sem preco fica fora do total', () => {
+  const lines = [
+    assistantLine({ requestId: 'req_a', model: 'claude-sonnet-5', timestamp: '2026-09-01T00:00:00Z', usage: { input: 1_000_000, cacheWrite: 1_000_000, cacheRead: 1_000_000, output: 1_000_000 } }),
+    assistantLine({ requestId: 'req_b', model: 'claude-opus-5', timestamp: '2026-09-01T00:00:00Z', usage: { input: 500_000, output: 500_000 } }),
+    assistantLine({ requestId: 'req_c', model: 'gpt-5.6-terra', timestamp: '2026-09-01T00:00:00Z', usage: { input: 1000, output: 1000 } }),
+  ];
+  const report = buildReport(lines, {}, { filesRead: 1 });
+
+  const sonnetRow = report.modelRows.find((r) => r.model === 'claude-sonnet-5');
+  assert.equal(Math.round(sonnetRow.contextCost * 100) / 100, 4.7);
+  assert.equal(Math.round(sonnetRow.generationCost * 100) / 100, 10);
+
+  const unpricedRow = report.modelRows.find((r) => r.model === 'gpt-5.6-terra');
+  assert.equal(unpricedRow.contextCost, null);
+  assert.equal(unpricedRow.generationCost, null);
+
+  const sumSplit = report.costSplit.context + report.costSplit.generation;
+  assert.equal(Math.round(sumSplit * 100) / 100, Math.round(report.totalCost * 100) / 100);
 });

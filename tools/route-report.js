@@ -219,6 +219,21 @@ function counterfactual(totals, modelId) {
   return computeCost(modelId, totals);
 }
 
+// Funcao pura: decompoe o custo de um total de tokens em CONTEXTO (input +
+// cacheWrite + cacheRead) e GERACAO (output), para um modelo dado. Retorna
+// { context, generation } com ambos null se o modelo nao tiver preco
+// conhecido (mesmo criterio de counterfactual/computeCost - nunca chuta).
+function splitCost(totals, modelId) {
+  const price = PRICES[normalizeModelId(modelId)];
+  if (!price) return { context: null, generation: null };
+  const context =
+    (totals.input / 1e6) * price.in +
+    (totals.cacheWrite / 1e6) * price.cacheWrite +
+    (totals.cacheRead / 1e6) * price.cacheRead;
+  const generation = (totals.output / 1e6) * price.out;
+  return { context, generation };
+}
+
 function buildSavings(cost, realCost) {
   if (cost === null) return null;
   const savings = cost - realCost;
@@ -327,23 +342,43 @@ function buildReport(lines, opts, meta) {
   for (const totals of byModel.values()) totalCost += totals.cost;
 
   const modelRows = [...byModel.entries()]
-    .map(([model, totals]) => ({
-      model,
-      messages: totals.messages,
-      input: totals.input,
-      cacheWrite: totals.cacheWrite,
-      cacheRead: totals.cacheRead,
-      output: totals.output,
-      cost: totals.costKnown && model !== NO_MODEL_LABEL ? totals.cost : null,
-      pctOfTotal: totalCost > 0 && totals.costKnown && model !== NO_MODEL_LABEL ? (totals.cost / totalCost) * 100 : null,
-    }))
+    .map(([model, totals]) => {
+      const priced = totals.costKnown && model !== NO_MODEL_LABEL;
+      const split = priced ? splitCost(totals, model) : { context: null, generation: null };
+      return {
+        model,
+        messages: totals.messages,
+        input: totals.input,
+        cacheWrite: totals.cacheWrite,
+        cacheRead: totals.cacheRead,
+        output: totals.output,
+        cost: priced ? totals.cost : null,
+        pctOfTotal: totalCost > 0 && priced ? (totals.cost / totalCost) * 100 : null,
+        contextCost: split.context,
+        generationCost: split.generation,
+      };
+    })
     .sort((a, b) => (b.cost || 0) - (a.cost || 0));
+
+  let totalContextCost = 0;
+  let totalGenerationCost = 0;
+  for (const row of modelRows) {
+    if (row.contextCost !== null) totalContextCost += row.contextCost;
+    if (row.generationCost !== null) totalGenerationCost += row.generationCost;
+  }
+  const pricedTotal = totalContextCost + totalGenerationCost;
+  const costSplit = {
+    context: totalContextCost,
+    generation: totalGenerationCost,
+    pctContext: pricedTotal > 0 ? (totalContextCost / pricedTotal) * 100 : null,
+  };
 
   return {
     modelRows,
     bySide,
     counterfactual: counterfactualReport,
     totalCost,
+    costSplit,
     footer: {
       filesRead: meta.filesRead || 0,
       eventsCounted: filtered.length,
@@ -382,7 +417,7 @@ function renderTable(report) {
 
   lines.push('=== Gasto por modelo ===');
   const header = [
-    padRight('modelo', 22),
+    padRight('modelo', 26),
     padLeft('msgs', 8),
     padLeft('input', 12),
     padLeft('cache_w', 12),
@@ -395,7 +430,7 @@ function renderTable(report) {
   for (const row of report.modelRows) {
     lines.push(
       [
-        padRight(row.model, 22),
+        padRight(row.model, 26),
         padLeft(fmtInt(row.messages), 8),
         padLeft(fmtInt(row.input), 12),
         padLeft(fmtInt(row.cacheWrite), 12),
@@ -406,6 +441,38 @@ function renderTable(report) {
       ].join(' ')
     );
   }
+  lines.push('');
+
+  lines.push('=== Contexto vs. geracao ===');
+  const splitHeader = [
+    padRight('modelo', 26),
+    padLeft('contexto $', 12),
+    padLeft('geracao $', 12),
+    padLeft('% contexto', 12),
+  ].join(' ');
+  lines.push(splitHeader);
+  for (const row of report.modelRows) {
+    const pctContext =
+      row.contextCost !== null && row.generationCost !== null && row.contextCost + row.generationCost > 0
+        ? ((row.contextCost / (row.contextCost + row.generationCost)) * 100).toFixed(1) + '%'
+        : 'n/d';
+    lines.push(
+      [
+        padRight(row.model, 26),
+        padLeft(fmtMoney(row.contextCost), 12),
+        padLeft(fmtMoney(row.generationCost), 12),
+        padLeft(pctContext, 12),
+      ].join(' ')
+    );
+  }
+  lines.push(
+    [
+      padRight('TOTAL', 26),
+      padLeft(fmtMoney(report.costSplit.context), 12),
+      padLeft(fmtMoney(report.costSplit.generation), 12),
+      padLeft(report.costSplit.pctContext === null ? 'n/d' : report.costSplit.pctContext.toFixed(1) + '%', 12),
+    ].join(' ')
+  );
   lines.push('');
 
   lines.push('=== Onde o trabalho rodou ===');
@@ -518,6 +585,7 @@ module.exports = {
   computeCost,
   aggregateByModel,
   counterfactual,
+  splitCost,
   buildCounterfactualReport,
   buildReport,
   renderTable,

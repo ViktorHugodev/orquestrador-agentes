@@ -212,6 +212,30 @@ disciplinas que a tabela de roteamento e o contrato já definem. Eles não
 impõem nada: o modelo ainda pode ignorar o lembrete. O que muda é que a regra
 esquecida volta a aparecer no prompt seguinte, em vez de apodrecer em silêncio.
 
+Cada um entra num ponto diferente do ciclo de vida da sessão:
+
+```
+ evento do harness            hook                   o que injeta
+
+ SessionStart ──────────▶ erros-resolvidos.cjs ──▶ os bugs já diagnosticados
+      │                                             neste projeto, por sintoma
+      ▼
+ UserPromptSubmit ──────▶ route-triage.cjs ─────▶ o lembrete de classificar a
+      │                                             rota antes de agir
+      ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │  o turno: classificar · delegar com contrato · validar pelo aceite  │
+ └─────────────────────────────────────────────────────────────────────┘
+      │
+      ▼
+ Stop ──────────────────▶ status-lembrete.cjs ──▶ o aviso de estado não salvo,
+                                                    se a árvore está suja
+```
+
+O acoplamento com o harness é real e está declarado nos limites: o stdout de
+`UserPromptSubmit` vira contexto, e o `Stop` só alcança o modelo devolvendo
+`decision: block`. Mudança nesses contratos quebra os três.
+
 - **`route-triage.cjs`** injeta o lembrete de classificar a rota em todo
   prompt não trivial. O texto do lembrete é fixo no hook, não lido da tabela —
   é a duplicação manual admitida na decisão 1. O que ele lê do projeto é só um
@@ -258,11 +282,45 @@ descreve a decisão real. Ambas comparam a precificação dos **mesmos tokens** 
 nenhuma das duas simula o retrabalho de um modelo mais barato errar a tarefa,
 e essa é a variável que decidiria a questão de verdade.
 
-O achado mais útil é o desconfortável: **74,7% do gasto está no modelo caro**,
-num repositório cuja tabela de roteamento define Sonnet como default de
-implementação. A medição contradiz a política que ela deveria confirmar. É o
-argumento a favor de instrumentar antes de afirmar — e a próxima decisão de
-arquitetura sai daqui, não de intuição.
+O primeiro achado é desconfortável: **74,7% do gasto está no modelo caro**, num
+repositório cuja tabela define o intermediário como default de implementação. A
+medição contradiz a política que ela deveria confirmar.
+
+O segundo achado explica o primeiro, e é o que muda o desenho. Separando o custo
+entre **contexto** (input, cache write, cache read) e **geração** (output):
+
+```
+ custo total, por natureza do token
+
+ ├──────────────────── contexto · 81,8% ────────────────────┤├─ geração 18,2% ─┤
+ │  input + cache write + cache read                        ││  output         │
+ └──────────────────────────────────────────────────────────┘└─────────────────┘
+                            ▲                                         ▲
+                            │                                         │
+              sessão mais curta, menos releitura            roteamento por custo
+                    (não implementado)                         (implementado)
+```
+
+O roteamento move **geração** para um modelo barato, e geração é 18% da conta. O
+que domina é manter a conversa aberta: no modelo topo a média é de **148 mil
+tokens de cache read por mensagem**, o que faz cada turno custar cerca de
+US$ 0,07 antes de gerar um único token. Vinte e um mil turnos depois, essa
+releitura sozinha é quase metade da conta inteira.
+
+Pior para a tese original: delegar **acrescenta** turnos ao orquestrador caro —
+montar o contrato, ler o diff, rodar o aceite. Em tarefa pequena o overhead de
+orquestração custa mais do que a economia de geração, e a política não tem como
+perceber isso, porque classifica por tipo de tarefa e não por tamanho.
+
+Onde a delegação foi usada, ela funcionou: os subagentes fizeram 6.828 mensagens
+por US$ 235, contra cerca de US$ 586 que o mesmo perfil de tokens custaria no
+modelo topo. É economia real — e é 10% da conta, porque só um quinto das
+mensagens foi delegado.
+
+A conclusão que sai daqui não é "rotear melhor". É que a próxima alavanca está em
+**encurtar sessão e enxugar contexto**, que corta custo em todos os turnos sem
+mexer em nenhuma regra de rota. A premissa do projeto estava certa na direção e
+errada na magnitude — e isso só apareceu depois de existir instrumento.
 
 O que o relatório não mede: o gasto nos CLIs externos de revisão e volume, que
 rodam fora dos transcripts do Claude Code e só aparecem na fatura de cada
