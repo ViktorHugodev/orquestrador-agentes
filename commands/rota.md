@@ -20,6 +20,11 @@ sessão custa dois cliques, escrever um contrato de delegação custa um
 parágrafo. O caminho barato venceu, e a implementação passou a rodar direto no
 modelo caro — o erro de rota que a própria política de roteamento proíbe.
 
+O sintoma é contável. Nos transcripts preservados há **pelo menos 33 trocas
+manuais de modelo** — piso, porque o histórico é podado — contra a delegação
+que a política pedia no lugar delas. O relatório de custo mostra o outro lado
+do mesmo fato: 74,7% do gasto no modelo caro (ver [Medição](../README.md#medição)).
+
 A correção não é disciplina, é tirar o parágrafo do caminho. Aqui o
 orquestrador escreve o contrato a partir do que já está no contexto; o custo
 para quem pede volta a ser dois cliques.

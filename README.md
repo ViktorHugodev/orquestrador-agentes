@@ -52,6 +52,8 @@ agents/
   executor.md           subagente Sonnet de implementação com escopo fechado
 commands/
   rota.md               comando que classifica uma task e já dispara o executor certo
+skills/
+  superplan.md          plano revisado por um modelo de outro fornecedor, via CLI
 hooks/
   route-triage.cjs      lembra a triagem de rota em todo prompt
   erros-resolvidos.cjs  injeta bugs já resolvidos no início da sessão
@@ -139,6 +141,27 @@ worktree git separada: pior caso vira uma pasta descartável.
 O custo: a worktree nasce sem dependências instaladas, sem cache de build e sem
 arquivo não versionado (`.env`), e o merge de volta é manual. Por isso é
 condicional — árvore limpa não paga esse preço.
+
+## 6. Revisão adversarial por um modelo de outro fornecedor
+
+Decisão de arquitetura entra em [`skills/superplan.md`](skills/superplan.md):
+quem planeja escreve o plano, marca onde quer contraditório e manda para um
+modelo de **outro fornecedor**, rodando por CLI própria com acesso somente de
+leitura. Ele critica ponto a ponto — concordo, discordo com cenário concreto de
+falha, faltou —, o autor responde cada objeção e o plano final carrega a lista
+do que foi aceito, do que foi rejeitado e por quê.
+
+O motivo de ser outro fornecedor: pedir crítica ao mesmo modelo que escreveu o
+plano produz concordância educada, porque ele já aceitou as próprias premissas.
+Um revisor que não herdou o raciocínio ataca a premissa, não a redação.
+
+O custo: é a parte mais cara e mais frágil do conjunto. Cada fornecedor tem CLI,
+sandbox e formato de saída próprios, e o plano precisa ser recortado — texto,
+nunca o código — para caber no prompt do revisor. As cinco armadilhas listadas
+no fim da skill custaram uma rodada cada em execução real, de decodificação de
+UTF-8 pelo shell a instrução persistente herdada da CLI do revisor. Também é
+lento: minutos, não segundos. Por isso não roda em tarefa de rotina, só onde
+errar sai mais caro do que esperar.
 
 ## Os hooks
 
