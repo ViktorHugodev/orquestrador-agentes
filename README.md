@@ -5,6 +5,16 @@ uso diário por um desenvolvedor: roteamento de tarefas por custo e
 capacidade, subagentes com contrato de handoff explícito, e hooks que tornam
 barulhenta a omissão dessas regras em vez de depender de alguém lembrar delas.
 
+Depois de meses rodando assim, o sistema foi instrumentado e medido sobre
+**33.921 chamadas em 609 sessões**. A medição desmentiu a premissa do próprio
+projeto: **81,8% do custo é contexto reenviado, não geração** — e o roteamento
+por tarefa, que é o coração desta configuração, ataca os 18% restantes. O
+número, a conta e o que ele muda no desenho estão em [Medição](#medição).
+
+Quem tem dois minutos: leia [Medição](#medição) e
+[o que isto não é](#o-que-isto-não-é-e-limites-conhecidos). É ali que está o
+que este repositório tem de diferente de uma pasta de configuração.
+
 Para não haver dúvida sobre o que roda e o que é só configuração: **não existe
 código de orquestração aqui.** Quem classifica a tarefa, escreve o contrato e
 valida o retorno é o modelo da sessão, seguindo as instruções em `agents/`,
@@ -12,7 +22,7 @@ valida o retorno é o modelo da sessão, seguindo as instruções em `agents/`,
 dependências (`hooks/`), que injetam lembretes nos eventos do harness, e uma
 CLI de medição (`tools/`). Não é framework nem produto — é a configuração real
 de um sistema de uma pessoa, extraída, generalizada e documentada. O valor
-está nas cinco decisões de arquitetura abaixo, cada uma com o que ela custa,
+está nas oito decisões de arquitetura abaixo, cada uma com o que ela custa,
 e nos limites declarados no fim.
 
 ```
@@ -387,6 +397,14 @@ Os `.md` de agentes e comandos seguem o formato de subagentes e comandos do
 Claude Code; os hooks são scripts Node.js chamados pelos eventos
 `UserPromptSubmit`, `SessionStart` e `Stop` via `hooks.json`. Adapte os
 caminhos e os critérios da tabela de roteamento ao seu conjunto de modelos.
+
+## Autor
+
+Victor Hugo Cordeiro Correa — desenvolvedor há sete anos, hoje trabalhando com
+LLM e agentes em produção.
+
+[LinkedIn](https://linkedin.com/in/viktorhugodev) ·
+[GitHub](https://github.com/ViktorHugodev)
 
 ## Licença
 
