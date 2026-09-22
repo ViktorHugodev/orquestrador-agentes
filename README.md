@@ -205,6 +205,38 @@ lê é só um imposto de contexto. A regra de admissão (custou mais de uma
 tentativa) existe para isso, e é aplicada por julgamento, sem teste que a
 garanta.
 
+## 8. A fronteira de autonomia é a reversibilidade, não a importância
+
+O agente age sozinho no que dá para desfazer e para no que não dá. A linha não é
+traçada por quanto a ação importa — é por quanto custa consertá-la.
+
+| Executa e informa depois            | Só com aprovação explícita             |
+| ----------------------------------- | -------------------------------------- |
+| editar, refatorar, renomear         | push e qualquer publicação externa      |
+| criar script, instalar dep de dev   | apagar dado sem cópia recuperável       |
+| rodar teste, lint, build            | migração destrutiva de banco            |
+| `git add` e `git commit` **local**  | deploy                                  |
+| abrir worktree, descartar worktree  | force-push ou rebase em branch compartilhada |
+
+O commit local está do lado esquerdo de propósito, e é a linha que mais gera
+discussão. Commit é reversível — `reset`, `revert`, `reflog` — e travá-lo atrás
+de aprovação só produz árvore suja e trabalho não registrado. **Push é a
+fronteira real: é ali que a ação deixa a máquina.**
+
+O motivo de a linha ser desenhada assim, e não mais para o lado seguro: pedir
+aprovação para tudo não produz segurança, produz carimbo. Um operador consultado
+quarenta vezes por hora sobre renomear variável aprova a quadragésima primeira
+sem ler — e a quadragésima primeira era o `DROP TABLE`. O orçamento de atenção
+de quem revisa é finito, e gastá-lo em ação reversível é o que deixa a
+irreversível passar.
+
+O custo: a classificação é julgamento do modelo, e julgamento erra. Apagar um
+arquivo não versionado parece rotina e é irreversível; uma dependência "de dev"
+pode carregar script de instalação. Por isso o lado direito é **lista explícita,
+não critério a interpretar** — e o projeto que precisa de mais rigor marca isso
+por opt-in, voltando a exigir aprovação para qualquer mutação. A exceção é
+declarada por quem opera; nunca é o default que muda sozinho.
+
 ## Os hooks
 
 Os três hooks em `hooks/` tornam barulhenta, no nível do harness, a omissão de
@@ -344,9 +376,9 @@ reportado como indisponível — a CLI nunca estima um preço que não conhece.
   precificação dos mesmos tokens em modelos diferentes. Ele não mostra o que
   aconteceria se o modelo barato errasse a tarefa e ela voltasse — e é esse
   retrabalho, não a tabela de preços, que decide se rotear compensa.
-- **Humano no laço, por desenho.** O orquestrador decide rota e valida o
-  aceite, mas commit, push e qualquer ação irreversível ficam com quem opera.
-  Não é um sistema autônomo e não pretende ser.
+- **Humano no laço, por desenho.** O orquestrador decide rota, delega e valida
+  o aceite, mas tudo que é irreversível para na aprovação de quem opera — a
+  fronteira está na decisão 8. Não é um sistema autônomo e não pretende ser.
 
 ## Uso
 
