@@ -1,0 +1,7 @@
+{"type":"assistant","isSidechain":false,"requestId":"req_1","timestamp":"2026-09-01T10:00:00Z","message":{"model":"claude-sonnet-5","usage":{"input_tokens":100,"cache_creation_input_tokens":200,"cache_read_input_tokens":300,"output_tokens":50}}}
+{"type":"assistant","isSidechain":false,"requestId":"req_1","timestamp":"2026-09-01T10:00:00Z","message":{"model":"claude-sonnet-5","usage":{"input_tokens":100,"cache_creation_input_tokens":200,"cache_read_input_tokens":300,"output_tokens":50}}}
+{this is not valid json,,,}
+{"type":"user","isSidechain":false,"requestId":"req_2","timestamp":"2026-09-01T10:05:00Z","message":{"role":"user","content":"oi"}}
+{"type":"assistant","isSidechain":true,"requestId":"req_3","timestamp":"2026-09-02T09:00:00Z","message":{"model":"claude-haiku-4-5","usage":{"input_tokens":1000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":1000,"iterations":[{"input_tokens":1000,"output_tokens":1000},{"input_tokens":1000,"output_tokens":1000}]}}}
+{"type":"assistant","isSidechain":false,"requestId":"req_4","timestamp":"2026-09-03T08:00:00Z","message":{"model":null,"usage":{"input_tokens":10,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":10}}}
+{"type":"assistant","isSidechain":false,"requestId":"req_5","timestamp":"2026-09-04T08:00:00Z","message":{"model":"gpt-5.6-terra","usage":{"input_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":200}}}
